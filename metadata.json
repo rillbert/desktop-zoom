@@ -1,0 +1,10 @@
+{
+  "name": "Desktop Zoom",
+  "description": "Zoom the entire desktop in or out",
+  "dev-version": "0.1",
+  "extension-id": "desktop-zoom",
+  "uuid": "desktopzoom@anders.rillbert.kutso.se",
+  "shell-version": [
+    "3.26"
+  ]
+}
