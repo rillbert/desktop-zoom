@@ -1,0 +1,5 @@
+= desktop-zoom
+
+A gnome-shell-extension that enables zoom in/out using the mouse wheel when gnome-shell is running under _Wayland_.
+
+NOTE: This is work-in-progress, don't expect this extension to work yet !!
