@@ -1,5 +1,6 @@
 
 const Clutter = imports.gi.Clutter;
+const GDesktopEnums = imports.gi.GDesktopEnums;
 const Lang = imports.lang
 const Magnifier = imports.ui.magnifier;
 const Main = imports.ui.main
@@ -179,6 +180,79 @@ var KeyManager = new Lang.Class({
     return primary;
   }
 
+  // Handles the interface to the 'system' magnifier.
+  var DesktopLens = new Lang.Class({
+      Name: "DesktopLens"
+
+      _init: function(minMag, maxMag) {
+        this._minMag = minMag;
+        this._maxMag = maxMag;
+        this._settings = new Gio.Settings({ schema_id: MAGNIFIER_SCHEMA });
+        this._initMagnifier();
+        this._changeId = null;
+      },
+
+      _initMagnifier: function() {
+        this._lens = Main.magnifier;
+
+        // listen for other parties that changes the magnifier state.
+        if(this._changeId) {
+          this._lens.disconnect(this._changeId);
+        }
+        this._lens.setActive(true);
+        this._changeId = this._lens.connect(
+          'active-changed',Lang.bind(this,this._activeChanged)
+        );
+
+        // We only work with the first zoom region...
+        let zoomRegions = this._lens.getZoomRegions();
+        if(zoomRegions.length) {
+          this._zoomRegion = zoomRegions[0];
+          this._zoomRegion.setFullScreenMode();
+          this._zoomRegion.setFocusTrackingMode(
+            GDesktopEnums.MagnifierFocusTrackingMode.NONE
+          );
+          this._zoomRegion.setCaretTrackingMode(
+            GDesktopEnums.MagnifierCaretTrackingMode.NONE
+          );
+          this._zoomRegion.setLensMode(true);
+        } else {
+          this._zoomRegion = null;
+        }
+
+        // clamp magnification to allowed interval
+        let mag = getMagFactor();
+        if(mag < this._minMag) {
+          setMagFactor(this._minMag);
+        }
+        else if(mag > this._maxMag) {
+          setMagFactor(this._maxMag);
+        }
+      },
+
+      getMagFactor: function() {
+        if(this._zoomRegion) {
+          [xMag, yMag] = this_._zoomRegion.getMagFactor();
+          return xMag;
+        }
+        return 1;
+      },
+
+      setMagFactor: function(mag) {
+        if(this._zoomRegion && mag >= this._minMag && mag <= this._maxMag) {
+          // Mag factor is accurate to two decimal places.
+          let fixed = parseFloat(mag.toFixed(2));
+          this._zoomRegion.setMagFactor(fixed,fixed);
+        }
+      },
+
+      _activeChanged: function(activate) {
+        if(!activate) {
+          _initMagnifier();
+        }
+      }
+  });
+
   var DesktopZoomer = new Lang.Class({
     Name: "DesktopZoomer",
 
@@ -187,7 +261,8 @@ var KeyManager = new Lang.Class({
       this._hasModal = false;
       this._scrollId = null;
       this._keyReleaseId = null;
-      this._factor = this._getMagFactor();
+      this._lens = new DesktopLens(0.5,4.0);
+      this._factor = this.lens.getMagFactor();
     },
 
     startZoomSession: function() {
@@ -236,24 +311,12 @@ var KeyManager = new Lang.Class({
       }
     },
 
-    _getMagFactor: function() {
-      let zoomRegions = Main.magnifier.getZoomRegions();
-      [xMag, yMag] = zoomRegions[0].getMagFactor();
-      return xMag;
-    },
-
-    _setMagFactor: function(xMag, yMag) {
-      let zoomRegions = Main.magnifier.getZoomRegions();
-      // Mag factor is accurate to two decimal places.
-      let xFixed = parseFloat(xMag.toFixed(2));
-      zoomRegions[0].setMagFactor(xFixed,xFixed);
-    },
-
     _scrollEvent: function(actor, event) {
       if(event.has_shift_modifier()) {
         this._scrollHandler(event);
+        return Clutter.EVENT_STOP;
       }
-      return Clutter.EVENT_STOP;
+      return Clutter.EVENT_PROPAGATE;
     },
 
     _scrollHandler: function(event) {
@@ -269,7 +332,7 @@ var KeyManager = new Lang.Class({
         scrollDelta = -0.15;
       }
       this._factor = this._factor * (1 + scrollDelta);
-      this._setMagFactor(this._factor);
+      this._lens.setMagFactor(this._factor);
     },
 
     _keyReleaseEvent: function(actor, event) {
