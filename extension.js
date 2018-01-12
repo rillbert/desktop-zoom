@@ -8,6 +8,23 @@ const Meta = imports.gi.Meta
 const Params = imports.misc.params;
 const Shell = imports.gi.Shell
 
+function mod(a, b) {
+  return (a + b) % b;
+}
+
+function primaryModifier(mask) {
+  if (mask == 0)
+  return 0;
+
+  let primary = 1;
+  while (mask > 1) {
+    mask >>= 1;
+    primary <<= 1;
+  }
+  return primary;
+}
+
+
 // var ZoomerPopup = new Lang.Class({
 //   Name: 'ZoomerPopup',
 //
@@ -162,32 +179,16 @@ var KeyManager = new Lang.Class({
         log('No listeners action=' + action);
       }
     }
-  })
-
-  function mod(a, b) {
-    return (a + b) % b;
-  }
-
-  function primaryModifier(mask) {
-    if (mask == 0)
-    return 0;
-
-    let primary = 1;
-    while (mask > 1) {
-      mask >>= 1;
-      primary <<= 1;
-    }
-    return primary;
-  }
+  });
 
   // Handles the interface to the 'system' magnifier.
   var DesktopLens = new Lang.Class({
-      Name: "DesktopLens"
+      Name: "DesktopLens",
 
       _init: function(minMag, maxMag) {
         this._minMag = minMag;
         this._maxMag = maxMag;
-        this._settings = new Gio.Settings({ schema_id: MAGNIFIER_SCHEMA });
+        // this._settings = new Gio.Settings({ schema_id: MAGNIFIER_SCHEMA });
         this._initMagnifier();
         this._changeId = null;
       },
@@ -221,18 +222,18 @@ var KeyManager = new Lang.Class({
         }
 
         // clamp magnification to allowed interval
-        let mag = getMagFactor();
+        let mag = this.getMagFactor();
         if(mag < this._minMag) {
-          setMagFactor(this._minMag);
+          this.setMagFactor(this._minMag);
         }
         else if(mag > this._maxMag) {
-          setMagFactor(this._maxMag);
+          this.setMagFactor(this._maxMag);
         }
       },
 
       getMagFactor: function() {
         if(this._zoomRegion) {
-          [xMag, yMag] = this_._zoomRegion.getMagFactor();
+          [xMag, yMag] = this._zoomRegion.getMagFactor();
           return xMag;
         }
         return 1;
@@ -262,7 +263,7 @@ var KeyManager = new Lang.Class({
       this._scrollId = null;
       this._keyReleaseId = null;
       this._lens = new DesktopLens(0.5,4.0);
-      this._factor = this.lens.getMagFactor();
+      this._factor = this._lens.getMagFactor();
     },
 
     startZoomSession: function() {
