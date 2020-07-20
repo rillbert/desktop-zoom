@@ -24,114 +24,6 @@ function primaryModifier(mask) {
   return primary;
 }
 
-
-// var ZoomerPopup = new Lang.Class({
-//   Name: 'ZoomerPopup',
-//
-//   _init: function(items) {
-//
-//     this.actor = new Shell.GenericContainer({ style_class: 'switcher-popup',
-//     reactive: true,
-//     visible: false });
-//     this.actor.connect('get-preferred-width', Lang.bind(this, this._getPreferredWidth));
-//     this.actor.connect('get-preferred-height', Lang.bind(this, this._getPreferredHeight));
-//     Main.uiGroup.add_actor(this.actor);
-//
-//     this._haveModal = false;
-//     this._modifierMask = 0;
-//   },
-//
-//   _getPreferredWidth: function(actor, forHeight, alloc) {
-//     let primary = Main.layoutManager.primaryMonitor;
-//
-//     alloc.min_size = primary.width;
-//     alloc.natural_size = primary.width;
-//   },
-//
-//   _getPreferredHeight: function(actor, forWidth, alloc) {
-//     let primary = Main.layoutManager.primaryMonitor;
-//
-//     alloc.min_size = primary.height;
-//     alloc.natural_size = primary.height;
-//   },
-//
-//   show: function(backward, binding, mask) {
-//     log( "show zoomer actor..." )
-//     if (!Main.pushModal(this.actor)) {
-//       return false;
-//       // Probably someone else has a pointer grab, try again with keyboard only
-//       // if (!Main.pushModal(this.actor, { options: Meta.ModalOptions.POINTER_ALREADY_GRABBED })) {
-//       //     return false;
-//       // }
-//     }
-//     this._haveModal = true;
-//     this._modifierMask = primaryModifier(mask);
-//     log( "have modal with modifier mask = " + this._modifierMask )
-//
-//     this.actor.connect('key-press-event', Lang.bind(this, this._keyPressEvent));
-//     this.actor.connect('key-release-event', Lang.bind(this, this._keyReleaseEvent));
-//     this.actor.connect('scroll-event', Lang.bind(this, this._scrollEvent));
-//
-//     // There's a race condition; if the user released Alt before
-//     // we got the grab, then we won't be notified. (See
-//     // https://bugzilla.gnome.org/show_bug.cgi?id=596695 for
-//     // details.) So we check now. (Have to do this after updating
-//     // selection.)
-//     // if (this._modifierMask) {
-//     //     let [x, y, mods] = global.get_pointer();
-//     //     if (!(mods & this._modifierMask)) {
-//     //         this._finish(global.get_current_time());
-//     //         return false;
-//     //     }
-//     // } else {
-//     //     this._resetNoModsTimeout();
-//     // }
-//
-//     return true;
-//   },
-//
-//   _keyReleaseEvent: function(actor, event) {
-//     if (this._modifierMask) {
-//       let [x, y, mods] = global.get_pointer();
-//       let state = mods & this._modifierMask;
-//
-//       if (state == 0)
-//       this._finish(event.get_time());
-//     } else {
-//       this._resetNoModsTimeout();
-//     }
-//
-//     return Clutter.EVENT_STOP;
-//   },
-//
-//   _scrollHandler: function(direction) {
-//     if (direction == Clutter.ScrollDirection.UP)
-//     this._select(this._previous());
-//     else if (direction == Clutter.ScrollDirection.DOWN)
-//     this._select(this._next());
-//   },
-//
-//   _scrollEvent: function(actor, event) {
-//     log( "scroll event received!" )
-//     this._scrollHandler(event.get_scroll_direction());
-//     return Clutter.EVENT_STOP;
-//   },
-//
-//   _popModal: function() {
-//     if (this._haveModal) {
-//       Main.popModal(this.actor);
-//       this._haveModal = false;
-//     }
-//   },
-//
-//   destroy: function() {
-//     this._popModal();
-//   },
-//
-//   _finish: function(timestamp) {
-//     this.destroy();
-//   },
-// });
 function log(message) {
   global.log("desktopzoom: " + message)
 }
@@ -359,18 +251,18 @@ var KeyManager = new Lang.Class({
   function enable() {
     log("extension enable() called");
     if(!keyManager) {
-      desktopZoomer = new DesktopZoomer();
+      // desktopZoomer = new DesktopZoomer();
       keyManager = new KeyManager();
       log("initializing...");
-      keyManager.listenFor("<shift>a", function(){
-        desktopZoomer.startZoomSession();
+      keyManager.listenFor("<Shift_L>", function(){
+        log("left shift clicked!")
      });
     }
   }
 
   function disable() {
     log("extension disable() called");
-    keyManager = null;
-    desktopZoomer.destroy();
-    desktopZoomer = null;
+    // keyManager = null;
+    // desktopZoomer.destroy();
+    // desktopZoomer = null;
   }
